@@ -1,26 +1,26 @@
-using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class GameManagerControl : MonoBehaviour
 {
     public int puntaje;
     public Text _texto;
-    public Text timerText;       // Texto que muestra el tiempo restante
-    public GameObject endGamePanel;         // Panel que se muestra al final del juego
-    public Text endGameScoreText;// Texto en el panel final que muestra el puntaje
-    public InputField playerNameInput;  // Campo de entrada para el nombre del jugador
-    public Button submitButton;             // Bot�n para enviar los datos
+    public Text timerText;               // Texto que muestra el tiempo restante
+    public GameObject endGamePanel;      // Panel que se muestra al final del juego
+    public Text endGameScoreText;        // Texto en el panel final que muestra el puntaje
+    public InputField playerNameInput;   // Campo de entrada para el nombre del jugador
+    public Button submitButton;          // Botón para enviar los datos
 
-    private float gameTime = 180f;          // Tiempo del juego en segundos (3 minutos)
+    private float gameTime = 180;       // Tiempo del juego en segundos (3 minutos)
     private bool isGameOver = false;
+    private bool scoreSubmitted = false; // Estado del envío del puntaje
 
     void Start()
     {
-        endGamePanel.SetActive(false);      // Aseg�rate de que el panel est� desactivado al inicio
+        endGamePanel.SetActive(false);  // Asegúrate de que el panel esté desactivado al inicio
         UpdateUI();
         StartCoroutine(GameTimer());
         submitButton.onClick.AddListener(SubmitScore);
@@ -61,14 +61,18 @@ public class GameManagerControl : MonoBehaviour
 
     public void SubmitScore()
     {
-        string playerName = playerNameInput.text;
-        StartCoroutine(SendScoreToDatabase(playerName, puntaje));
+        if (!scoreSubmitted) // Verificar si el puntaje no ha sido enviado aún
+        {
+            string playerName = playerNameInput.text;
+            StartCoroutine(SendScoreToDatabase(playerName, puntaje));
+            scoreSubmitted = true; // Marcar como enviado después de iniciar la corutina
+        }
     }
 
     private IEnumerator SendScoreToDatabase(string playerName, int score)
     {
         string jsonData = JsonUtility.ToJson(new ScoreData(playerName, score));
-        UnityWebRequest www = UnityWebRequest.PostWwwForm("http://localhost/update_score_vj1.php", "application/json");
+        UnityWebRequest www = new UnityWebRequest("http://localhost/update_score_vj1.php", "POST");
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(jsonData);
         www.uploadHandler = new UploadHandlerRaw(bodyRaw);
         www.downloadHandler = new DownloadHandlerBuffer();
@@ -78,7 +82,7 @@ public class GameManagerControl : MonoBehaviour
         if (www.result == UnityWebRequest.Result.Success)
         {
             Debug.Log("Score submitted successfully.");
-            RestartGame(); // Reiniciar el juego despu�s de enviar el puntaje
+            RestartGame(); // Reiniciar el juego después de enviar el puntaje
         }
         else
         {
@@ -104,3 +108,4 @@ public class GameManagerControl : MonoBehaviour
         }
     }
 }
+
